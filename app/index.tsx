@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import React from "react";
 import { useAssets } from "expo-asset";
 import { ResizeMode, Video } from "expo-av";
 import { Link } from "expo-router";
@@ -28,7 +27,7 @@ const Page = () => {
           href={"/login"}
           style={[
             defaultStyles.pillButton,
-            { flex: 1, backgroundColor: Colors.dark },
+            { flex: 1, backgroundColor: Colors.dark, },
           ]}
           asChild
         >
