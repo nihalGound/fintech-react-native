@@ -1,18 +1,17 @@
-import React, { ReactNode, RefObject } from 'react';
+import React, { ReactNode } from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
 import Animated, {
-  useAnimatedGestureHandler,
   useAnimatedStyle,
   useAnimatedReaction,
   withSpring,
-  scrollTo,
   withTiming,
   useSharedValue,
+  scrollTo,
   runOnJS,
   SharedValue,
   AnimatedRef,
 } from 'react-native-reanimated';
-import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { animationConfig, COL, getOrder, getPosition, Positions, SIZE } from './Config';
@@ -48,76 +47,62 @@ const Item = ({ children, positions, id, onDragEnd, scrollView, scrollY, editing
     }
   );
 
-  const onGestureEvent = useAnimatedGestureHandler<
-    PanGestureHandlerGestureEvent,
-    { x: number; y: number }
-  >({
-    onStart: (_, ctx) => {
-      // dont allow drag start if we're done editing
-      if (editing) {
-        ctx.x = translateX.value;
-        ctx.y = translateY.value;
-        isGestureActive.value = true;
-      }
-    },
-    onActive: ({ translationX, translationY }, ctx) => {
-      // dont allow drag if we're done editing
-      if (editing) {
-        translateX.value = ctx.x + translationX;
-        translateY.value = ctx.y + translationY;
-        // 1. We calculate where the tile should be
-        const newOrder = getOrder(
-          translateX.value,
-          translateY.value,
-          Object.keys(positions.value).length - 1
+  const panGesture = Gesture.Pan()
+    .enabled(editing)
+    .onBegin(() => {
+      isGestureActive.value = true;
+    })
+    .onUpdate(({ translationX, translationY }) => {
+      translateX.value += translationX;
+      translateY.value += translationY;
+
+      const newOrder = getOrder(
+        translateX.value,
+        translateY.value,
+        Object.keys(positions.value).length - 1
+      );
+
+      const oldOrder = positions.value[id];
+      if (newOrder !== oldOrder) {
+        const idToSwap = Object.keys(positions.value).find(
+          (key) => positions.value[key] === newOrder
         );
-
-        // 2. We swap the positions
-        const oldOlder = positions.value[id];
-        if (newOrder !== oldOlder) {
-          const idToSwap = Object.keys(positions.value).find(
-            (key) => positions.value[key] === newOrder
-          );
-          if (idToSwap) {
-            // Spread operator is not supported in worklets
-            // And Object.assign doesn't seem to be working on alpha.6
-            const newPositions = JSON.parse(JSON.stringify(positions.value));
-            newPositions[id] = newOrder;
-            newPositions[idToSwap] = oldOlder;
-            positions.value = newPositions;
-          }
-        }
-
-        // 3. Scroll up and down if necessary
-        const lowerBound = scrollY.value;
-        const upperBound = lowerBound + containerHeight - SIZE;
-        const maxScroll = contentHeight - containerHeight;
-        const leftToScrollDown = maxScroll - scrollY.value;
-        if (translateY.value < lowerBound) {
-          const diff = Math.min(lowerBound - translateY.value, lowerBound);
-          scrollY.value -= diff;
-          scrollTo(scrollView, 0, scrollY.value, false);
-          ctx.y -= diff;
-          translateY.value = ctx.y + translationY;
-        }
-        if (translateY.value > upperBound) {
-          const diff = Math.min(translateY.value - upperBound, leftToScrollDown);
-          scrollY.value += diff;
-          scrollTo(scrollView, 0, scrollY.value, false);
-          ctx.y += diff;
-          translateY.value = ctx.y + translationY;
+        if (idToSwap) {
+          const newPositions = { ...positions.value };
+          newPositions[id] = newOrder;
+          newPositions[idToSwap] = oldOrder;
+          positions.value = newPositions;
         }
       }
-    },
-    onEnd: () => {
+
+      const lowerBound = scrollY.value;
+      const upperBound = lowerBound + containerHeight - SIZE;
+      const maxScroll = contentHeight - containerHeight;
+      const leftToScrollDown = maxScroll - scrollY.value;
+
+      if (translateY.value < lowerBound) {
+        const diff = Math.min(lowerBound - translateY.value, lowerBound);
+        scrollY.value -= diff;
+        scrollTo(scrollView, 0, scrollY.value, false);
+      }
+      if (translateY.value > upperBound) {
+        const diff = Math.min(translateY.value - upperBound, leftToScrollDown);
+        scrollY.value += diff;
+        scrollTo(scrollView, 0, scrollY.value, false);
+      }
+    })
+    .onEnd(() => {
       const newPosition = getPosition(positions.value[id]!);
       translateX.value = withTiming(newPosition.x, animationConfig, () => {
         isGestureActive.value = false;
         runOnJS(onDragEnd)(positions.value);
       });
       translateY.value = withTiming(newPosition.y, animationConfig);
-    },
-  });
+    })
+    .onFinalize(() => {
+      isGestureActive.value = false;
+    });
+
   const style = useAnimatedStyle(() => {
     const zIndex = isGestureActive.value ? 100 : 0;
     const scale = withSpring(isGestureActive.value ? 1.05 : 1);
@@ -131,11 +116,12 @@ const Item = ({ children, positions, id, onDragEnd, scrollView, scrollY, editing
       transform: [{ translateX: translateX.value }, { translateY: translateY.value }, { scale }],
     };
   });
+
   return (
     <Animated.View style={style}>
-      <PanGestureHandler enabled={editing} onGestureEvent={onGestureEvent}>
+      <GestureDetector gesture={panGesture}>
         <Animated.View style={StyleSheet.absoluteFill}>{children}</Animated.View>
-      </PanGestureHandler>
+      </GestureDetector>
     </Animated.View>
   );
 };
