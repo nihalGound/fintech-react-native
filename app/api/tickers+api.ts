@@ -1,13 +1,36 @@
 export async function GET(request: Request) {
   try {
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 6); // Subtract 6 months
+    const start = startDate.toISOString().split("T")[0];
+    console.log("start from : ",start) 
+    const url = new URL(request.url);
+    const name = url.searchParams.get("name");
+    const symbol = url.searchParams.get("symbol");
+
+    const response = await fetch(
+      `https://api.coinpaprika.com/v1/tickers/${symbol?.toLowerCase()}-${name?.toLowerCase()}/historical?start=${start}&interval=1d`
+    );
     // const response = await fetch(
     //   `https://api.coinpaprika.com/v1/tickers/btc-bitcoin/historical?start=2024-01-01&interval=1d`
     // );
 
-    // const res = await response.json();
-    // return Response.json(res.data);
-    return Response.json(data);
-  } catch (error) {}
+    const res = await response.json();
+    return new Response(
+      JSON.stringify(res.data || res),
+      {status: 200}
+    )
+    // return Response.json(data);
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Internal Server Error",
+        details: error,
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
 }
 
 const data = [

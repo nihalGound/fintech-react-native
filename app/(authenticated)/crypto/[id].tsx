@@ -41,7 +41,6 @@ const Page = () => {
   const { state, isActive } = useChartPressState({ x: 0, y: { price: 0 } });
 
   useEffect(() => {
-    console.log(isActive);
     if (isActive) Haptics.selectionAsync();
   }, [isActive]);
 
@@ -55,8 +54,13 @@ const Page = () => {
 
   const { data: tickers } = useQuery({
     queryKey: ["tickers"],
-    queryFn: async (): Promise<any[]> =>
-      fetch(`/api/tickers`).then((res) => res.json()),
+    queryFn: async (): Promise<any[]> => {
+      const res = fetch(
+        `/api/tickers?name=${data?.name}&symbol=${data?.symbol}`
+      ).then((res) => res.json());
+      return res;
+    },
+    enabled: !!data
   });
 
   const animatedText = useAnimatedProps(() => {

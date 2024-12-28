@@ -3,7 +3,7 @@ const API_KEY = process.env.CRYPTO_API_KEY;
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
-    const ids = url.searchParams.get("ids") || "";
+    const ids = url.searchParams.get("ids") || "1";
 
     const response = await fetch(
       `https://pro-api.coinmarketcap.com/v2/cryptocurrency/info?id=${ids}`,

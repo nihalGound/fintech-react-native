@@ -13,8 +13,10 @@ import RoundBtn from "@/components/RoundBtn";
 import Dropdown from "@/components/Dropdown";
 import { Ionicons } from "@expo/vector-icons";
 import WidgetList from "@/components/SortableList/WidgetList";
+import { useRouter } from "expo-router";
 
 const Page = () => {
+  const router = useRouter();
   const { balance, runTransaction, transaction, clearTransaction } =
     useBalanceStore();
   const headerHeight = useHeaderHeight();
@@ -54,7 +56,11 @@ const Page = () => {
       <View style={styles.actionRow}>
         <RoundBtn icon={"add"} text="Add money" onPress={onAddMoney} />
         <RoundBtn icon={"refresh"} text="Exchange" onPress={clearTransaction} />
-        <RoundBtn icon={"list"} text="Details" />
+        <RoundBtn
+          icon={"help"}
+          text="Help"
+          onPress={() => router.push("/help")}
+        />
         <Dropdown />
       </View>
 

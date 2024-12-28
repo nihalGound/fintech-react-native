@@ -40,9 +40,7 @@ const Page = () => {
       const signUpAttempt = await signUp!.attemptPhoneNumberVerification({
         code,
       });
-      console.log(signUpAttempt.status);
       if(signUpAttempt.status === "complete") {
-        console.log("complete")
         await setActive!({ session: signUp!.createdSessionId });
       }
       else {

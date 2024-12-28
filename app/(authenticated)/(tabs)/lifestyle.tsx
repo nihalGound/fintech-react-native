@@ -1,11 +1,12 @@
-import { View, Text } from 'react-native'
 import React from 'react'
+import ComingSoonFeature from '@/components/ComingSoon'
 
 const Lifestyle = () => {
   return (
-    <View>
-      <Text>Lifestyle</Text>
-    </View>
+    <ComingSoonFeature 
+      title="Lifestyle Rewards Coming Soon"
+      description="Earn rewards on your everyday purchases and unlock exclusive benefits."
+    />
   )
 }
 
